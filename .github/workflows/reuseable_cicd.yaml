@@ -1,0 +1,48 @@
+name: Reusable CI/CD Workflow
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+      dependencies:
+        required: false
+        type: string
+      test-command:
+        required: false
+        type: string
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, 3.10]
+
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ${{ inputs.dependencies }}
+
+      - name: Run Tests
+        run: ${{ inputs.test-command }}
+        
